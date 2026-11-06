@@ -23,6 +23,11 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: 📱 Install Android SDK 36
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36"
+
       - name: 🚀 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -36,10 +41,10 @@ jobs:
         run: flutter pub get
 
       - name: 🔨 Build Debug APK
-        run: flutter build apk --debug --android-skip-build-dependency-validation
+        run: flutter build apk --debug
 
       - name: 🔨 Build Release APK
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: flutter build apk --release
 
       - name: 📤 Upload File APK ke Artifacts
         uses: actions/upload-artifact@v4
