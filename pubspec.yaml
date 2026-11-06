@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   model_viewer_plus: ^1.7.0
   url_launcher: ^6.3.0
+  camera: ^0.11.2+1
+  android_intent_plus: ^5.3.1
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +26,4 @@ flutter:
   assets:
     - assets/models/
     - assets/images/
+    - assets/markers/

@@ -1,12 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.artoraja.app">
 
-    <!-- Izin Kamera dan Internet untuk AR / 3D Viewer -->
+    <!-- Izin Kamera, Senter, dan Internet untuk AR / 3D Viewer -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.FLASHLIGHT"/>
     
-    <!-- Fitur ARCore Opsional (Bisa berjalan di semua perangkat) -->
+    <!-- Fitur Kamera & AR Opsional (Bisa berjalan di semua perangkat) -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.ar" android:required="false"/>
 
     <!-- Paket query untuk Google Scene Viewer AR di Android 11+ -->
