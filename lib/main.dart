@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'models/artifact.dart';
 
 void main() {
@@ -481,12 +482,41 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       title: 'Panduan',
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          _BinderStep(number: '1', text: 'Buka Menu Scan AR untuk masuk ke penampil 3D.'),
-          _BinderStep(number: '2', text: 'Pilih salah satu objek Toraja dari daftar panel kiri layar.'),
-          _BinderStep(number: '3', text: 'Putar objek 3D 360° dengan usapan jari, dan cubit untuk memperbesar / zoom.'),
-          _BinderStep(number: '4', text: 'Ketuk tombol AR untuk menaruh objek budaya di atas meja/lantai nyata melalui kamera HP.'),
-          _BinderStep(number: '5', text: 'Tekan tombol tanda tanya (?) untuk membaca nilai sejarah & filosofi budayanya.'),
+        children: [
+          const _BinderStep(number: '1', text: 'Buka Menu Scan AR untuk masuk ke penampil 3D.'),
+          const _BinderStep(number: '2', text: 'Pilih salah satu objek Toraja dari daftar panel kiri layar.'),
+          const _BinderStep(number: '3', text: 'Putar objek 3D 360° dengan usapan jari, dan cubit untuk memperbesar / zoom.'),
+          const _BinderStep(number: '4', text: 'Ketuk tombol AR untuk menaruh objek budaya di atas meja/lantai nyata melalui kamera HP.'),
+          const _BinderStep(number: '5', text: 'Tekan tombol tanda tanya (?) untuk membaca nilai sejarah & filosofi budayanya.'),
+          const SizedBox(height: 14),
+          Center(
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB92B27),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 3,
+              ),
+              icon: const Icon(Icons.download_rounded, size: 20),
+              label: const Text(
+                'Unduh Kartu Marker (Google Drive)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              onPressed: () async {
+                final Uri url = Uri.parse('https://drive.google.com/drive/folders/1t1M_GMO6DiAKDI37YLO62ZTx6qjQP-lt');
+                try {
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                } catch (e) {
+                  debugPrint('Error launching url: $e');
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
