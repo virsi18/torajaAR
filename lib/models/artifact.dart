@@ -18,6 +18,11 @@ class TorajaArtifact {
 
 // Data daftar objek kebudayaan Toraja sesuai wireframe PDF
 class ArtifactData {
+  /// Ubah nilai ini menjadi `true` jika Anda sudah memasukkan file .glb asli dari klien
+  /// ke dalam folder 'assets/models/'.
+  /// Jika masih bernilai `false`, aplikasi akan menggunakan model 3D sample online aman.
+  static const bool useLocalAssets = false;
+
   static const List<TorajaArtifact> items = [
     TorajaArtifact(
       id: 'headdress',
@@ -65,3 +70,4 @@ class ArtifactData {
     ),
   ];
 }
+

@@ -272,8 +272,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     children: [
                       // Komponen ModelViewer 3D & AR
                       ModelViewer(
-                        key: ValueKey(activeArtifact.id),
-                        src: activeArtifact.fallbackUrl, // Gunakan fallback online aman saat file klien belum ada
+                        key: ValueKey('${activeArtifact.id}_${ArtifactData.useLocalAssets}'),
+                        src: ArtifactData.useLocalAssets
+                            ? activeArtifact.localAssetPath
+                            : activeArtifact.fallbackUrl,
                         alt: activeArtifact.name,
                         ar: true, // Fitur Augmented Reality via Google ARCore
                         arModes: const ['scene-viewer', 'webxr', 'quick-look'],
@@ -764,3 +766,4 @@ class TongkonanWireframePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
