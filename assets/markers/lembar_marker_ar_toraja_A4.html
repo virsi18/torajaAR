@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kartu Marker AR Toraja - Lembar Siap Cetak A4</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .print-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      background: #ffffff;
+      padding: 12mm 10mm;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px double #111;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      font-size: 22pt;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #b92b27;
+      text-transform: uppercase;
+    }
+    .header p {
+      font-size: 9.5pt;
+      color: #333;
+      margin-top: 3px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 10mm;
+      flex: 1;
+    }
+    .card {
+      border: 3.5px dashed #111;
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      background: #fffdf9;
+      position: relative;
+    }
+    .card-badge {
+      position: absolute;
+      top: -12px;
+      left: 14px;
+      background: #111;
+      color: #fff;
+      font-size: 8pt;
+      font-weight: bold;
+      padding: 2px 10px;
+      border-radius: 10px;
+    }
+    .cut-line-hint {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      font-size: 7.5pt;
+      color: #888;
+    }
+    .card-header {
+      text-align: center;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+    .card-header h2 {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #b92b27;
+    }
+    .card-header span {
+      font-size: 8pt;
+      color: #555;
+      font-weight: 600;
+    }
+    /* AR Tracking Frame (High Contrast) */
+    .ar-target-frame {
+      width: 140px;
+      height: 140px;
+      border: 8px solid #000;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 4px 0;
+    }
+    .ar-corner {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #000;
+    }
+    .corner-tl { top: 0; left: 0; }
+    .corner-tr { top: 0; right: 0; }
+    .corner-bl { bottom: 0; left: 0; }
+    .corner-br { bottom: 0; right: 0; }
+    .ar-inner-box {
+      width: 90px;
+      height: 90px;
+      border: 4px solid #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fdfaf2;
+    }
+    .ar-icon {
+      font-size: 32pt;
+      margin-bottom: 2px;
+    }
+    .ar-code {
+      font-size: 8pt;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #000;
+    }
+    .card-footer {
+      text-align: center;
+      margin-top: 6px;
+      font-size: 7.5pt;
+      color: #444;
+      line-height: 1.3;
+    }
+    .footer-note {
+      text-align: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #ccc;
+      font-size: 8pt;
+      color: #666;
+    }
+    @media print {
+      body {
+        background: transparent;
+        padding: 0;
+      }
+      .print-sheet {
+        box-shadow: none;
+        width: 100%;
+        min-height: 100%;
+        padding: 0;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+    .btn-print {
+      margin-bottom: 16px;
+      background: #b92b27;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      font-size: 11pt;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <button class="btn-print no-print" onclick="window.print()">🖨️ Cetak Lembar Marker (A4) / Simpan ke PDF</button>
+
+  <div class="print-sheet">
+    <div class="header">
+      <h1>AR Toraja - Lembar Kartu Marker</h1>
+      <p>Cetak lembar ini pada kertas ukuran A4 atau tampilkan di layar monitor untuk dipindai menggunakan aplikasi <strong>AR Toraja</strong>.</p>
+    </div>
+
+    <div class="grid">
+      <!-- KARTU 1: SA'PI' -->
+      <div class="card">
+        <span class="card-badge">MARKER #1</span>
+        <span class="cut-line-hint">✂️ Garis Gunting</span>
+        <div class="card-header">
+          <h2>Sa'pi' Toraja</h2>
+          <span>Hiasan Kepala Tradisional Adat</span>
+        </div>
+        <div class="ar-target-frame">
+          <div class="ar-corner corner-tl"></div>
+          <div class="ar-corner corner-tr"></div>
+          <div class="ar-corner corner-bl"></div>
+          <div class="ar-corner corner-br"></div>
+          <div class="ar-inner-box">
+            <div class="ar-icon">👑</div>
+            <div class="ar-code">TORAJA-01</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          Arahkan kamera aplikasi AR Toraja ke kotak marker ini.<br>
+          Tekan tombol <strong>"Scan Marker"</strong> untuk memunculkan model 3D Sa'pi'.
+        </div>
+      </div>
+
+      <!-- KARTU 2: PASSAPU -->
+      <div class="card">
+        <span class="card-badge">MARKER #2</span>
+        <span class="cut-line-hint">✂️ Garis Gunting</span>
+        <div class="card-header">
+          <h2>Passapu Toraja</h2>
+          <span>Ikat Kepala Tenun Adat Kaum Pria</span>
+        </div>
+        <div class="ar-target-frame">
+          <div class="ar-corner corner-tl"></div>
+          <div class="ar-corner corner-tr"></div>
+          <div class="ar-corner corner-bl"></div>
+          <div class="ar-corner corner-br"></div>
+          <div class="ar-inner-box">
+            <div class="ar-icon">🎩</div>
+            <div class="ar-code">TORAJA-02</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          Arahkan kamera aplikasi AR Toraja ke kotak marker ini.<br>
+          Tekan tombol <strong>"Scan Marker"</strong> untuk memunculkan model 3D Passapu.
+        </div>
+      </div>
+
+      <!-- KARTU 3: SARONG -->
+      <div class="card">
+        <span class="card-badge">MARKER #3</span>
+        <span class="cut-line-hint">✂️ Garis Gunting</span>
+        <div class="card-header">
+          <h2>Sarong Adat</h2>
+          <span>Busana Kain Tenun Motif Pa'ssura</span>
+        </div>
+        <div class="ar-target-frame">
+          <div class="ar-corner corner-tl"></div>
+          <div class="ar-corner corner-tr"></div>
+          <div class="ar-corner corner-bl"></div>
+          <div class="ar-corner corner-br"></div>
+          <div class="ar-inner-box">
+            <div class="ar-icon">🧣</div>
+            <div class="ar-code">TORAJA-03</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          Arahkan kamera aplikasi AR Toraja ke kotak marker ini.<br>
+          Tekan tombol <strong>"Scan Marker"</strong> untuk memunculkan model 3D Sarong.
+        </div>
+      </div>
+
+      <!-- KARTU 4: FIGUR TORAJA -->
+      <div class="card">
+        <span class="card-badge">MARKER #4</span>
+        <span class="cut-line-hint">✂️ Garis Gunting</span>
+        <div class="card-header">
+          <h2>Figur Budaya</h2>
+          <span>Ornamen Seni & Figur Khas Toraja</span>
+        </div>
+        <div class="ar-target-frame">
+          <div class="ar-corner corner-tl"></div>
+          <div class="ar-corner corner-tr"></div>
+          <div class="ar-corner corner-bl"></div>
+          <div class="ar-corner corner-br"></div>
+          <div class="ar-inner-box">
+            <div class="ar-icon">🏛️</div>
+            <div class="ar-code">TORAJA-04</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          Arahkan kamera aplikasi AR Toraja ke kotak marker ini.<br>
+          Tekan tombol <strong>"Scan Marker"</strong> untuk memunculkan model 3D Figur Toraja.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      © Tim Peneliti AR Toraja • Aplikasi Augmented Reality Kebudayaan Toraja berbasis Mobile
+    </div>
+  </div>
+
+</body>
+</html>
+
