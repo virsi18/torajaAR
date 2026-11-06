@@ -276,8 +276,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         key: ValueKey(activeArtifact.id),
                         src: activeArtifact.publicUrl,
                         alt: activeArtifact.name,
-                        ar: true, // Fitur Augmented Reality via Google ARCore / Scene Viewer
+                        ar: true, // Fitur Augmented Reality via Google Scene Viewer
                         arModes: const ['scene-viewer', 'webxr', 'quick-look'],
+                        arScale: ArScale.auto,
+                        arPlacement: ArPlacement.floor,
                         autoRotate: true,
                         cameraControls: true,
                         backgroundColor: Colors.transparent,
