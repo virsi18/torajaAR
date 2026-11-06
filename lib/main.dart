@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:camera/camera.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'models/artifact.dart';
@@ -47,18 +47,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   int _currentScreen = 0;
   int _selectedArtifactIndex = 0;
 
-  // State Manajemen Kamera AR In-App
+  // State Manajemen Scanner Kamera AR Optik (Metode B)
   bool _isCameraMode = true; // Default aktif saat klik Scan AR
-  CameraController? _cameraController;
-  List<CameraDescription> _availableCamerasList = [];
-  int _selectedCameraIndex = 0;
-  bool _isCameraInitialized = false;
-  bool _isCameraInitializing = false;
+  MobileScannerController? _scannerController;
   bool _isFlashOn = false;
 
-  // STATE SCAN MARKER (Default FALSE: Objek 3D HANYA muncul bila marker sudah discan!)
+  // STATE SCAN MARKER: Objek 3D HANYA muncul bila marker optik telah dideteksi kamera!
   bool _isMarkerScanned = false;
-  bool _isScanningEffect = false;
 
   // Animasi Laser Scanline
   late AnimationController _scanAnimationController;
@@ -83,169 +78,90 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   @override
   void dispose() {
     _scanAnimationController.dispose();
-    _disposeCamera();
+    _scannerController?.dispose();
     super.dispose();
   }
 
-  Future<void> _disposeCamera() async {
-    if (_cameraController != null) {
-      await _cameraController!.dispose();
-      _cameraController = null;
-      if (mounted) {
-        setState(() {
-          _isCameraInitialized = false;
-          _isFlashOn = false;
-        });
-      }
-    }
+  void _initScanner() {
+    _scannerController ??= MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: _isFlashOn,
+    );
   }
 
-  Future<void> _initCamera({int cameraIndex = 0}) async {
-    if (_isCameraInitializing) return;
+  void _disposeScanner() {
+    _scannerController?.dispose();
+    _scannerController = null;
+    _isFlashOn = false;
+  }
+
+  void _toggleCameraMode() {
     setState(() {
-      _isCameraInitializing = true;
-      _isCameraMode = true;
+      _isCameraMode = !_isCameraMode;
+      if (_isCameraMode) {
+        _initScanner();
+      } else {
+        _disposeScanner();
+      }
     });
+  }
 
-    try {
-      if (_availableCamerasList.isEmpty) {
-        _availableCamerasList = await availableCameras();
-      }
+  void _switchCameraLens() {
+    _scannerController?.switchCamera();
+  }
 
-      if (_availableCamerasList.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tidak ada kamera yang ditemukan pada perangkat.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          setState(() {
-            _isCameraMode = false;
-            _isCameraInitializing = false;
-          });
-        }
-        return;
-      }
+  void _toggleFlash() {
+    _scannerController?.toggleTorch();
+    setState(() {
+      _isFlashOn = !_isFlashOn;
+    });
+  }
 
-      final targetIndex = cameraIndex % _availableCamerasList.length;
-      final camera = _availableCamerasList[targetIndex];
+  // PEMROSESAN PENGENALAN MARKER OPTIK (METODE B) REAL-TIME
+  void _handleDetectedMarker(String rawCode) {
+    final upper = rawCode.toUpperCase().trim();
+    int? matchedIndex;
 
-      if (_cameraController != null) {
-        await _cameraController!.dispose();
-      }
+    // Pencocokan kode marker Toraja unik
+    if (upper.contains('SAPI') || upper.contains('01')) {
+      matchedIndex = 0;
+    } else if (upper.contains('PASSAPU') || upper.contains('02')) {
+      matchedIndex = 1;
+    } else if (upper.contains('SARONG') || upper.contains('03')) {
+      matchedIndex = 2;
+    } else if (upper.contains('FIGUR') || upper.contains('TORAJA') || upper.contains('04')) {
+      matchedIndex = 3;
+    }
 
-      final controller = CameraController(
-        camera,
-        ResolutionPreset.medium,
-        enableAudio: false,
-      );
-
-      await controller.initialize();
-
-      if (mounted) {
+    if (matchedIndex != null) {
+      if (!_isMarkerScanned || _selectedArtifactIndex != matchedIndex) {
+        HapticFeedback.heavyImpact();
         setState(() {
-          _cameraController = controller;
-          _selectedCameraIndex = targetIndex;
-          _isCameraInitialized = true;
-          _isCameraInitializing = false;
-          _isCameraMode = true;
-          _isFlashOn = false;
+          _selectedArtifactIndex = matchedIndex!;
+          _isMarkerScanned = true;
         });
-      }
-    } catch (e) {
-      debugPrint('Error init camera: $e');
-      if (mounted) {
-        setState(() {
-          _isCameraMode = false;
-          _isCameraInitializing = false;
-        });
+
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Akses kamera gagal: $e. Pastikan izin kamera telah disetujui.'),
-            backgroundColor: const Color(0xFFB92B27),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 24),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '✓ MARKER OPTIK TERDETEKSI: ${ArtifactData.items[matchedIndex].name}!',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF00C853),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
-    }
-  }
-
-  void _toggleCameraMode() async {
-    if (_isCameraMode) {
-      await _disposeCamera();
-      if (mounted) {
-        setState(() {
-          _isCameraMode = false;
-        });
-      }
-    } else {
-      await _initCamera(cameraIndex: _selectedCameraIndex);
-    }
-  }
-
-  void _switchCameraLens() async {
-    if (_availableCamerasList.length > 1) {
-      final nextIndex = (_selectedCameraIndex + 1) % _availableCamerasList.length;
-      await _initCamera(cameraIndex: nextIndex);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hanya 1 lensa kamera yang terdeteksi di perangkat ini.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  void _toggleFlash() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
-    try {
-      if (_isFlashOn) {
-        await _cameraController!.setFlashMode(FlashMode.off);
-        setState(() => _isFlashOn = false);
-      } else {
-        await _cameraController!.setFlashMode(FlashMode.torch);
-        setState(() => _isFlashOn = true);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lampu senter tidak didukung di lensa ini: $e')),
-      );
-    }
-  }
-
-  // Aksi Pemindaian Marker: Memunculkan model 3D di kotak scan
-  void _scanMarkerTrigger(TorajaArtifact artifact) async {
-    setState(() {
-      _isScanningEffect = true;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    if (mounted) {
-      setState(() {
-        _isScanningEffect = false;
-        _isMarkerScanned = true;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 22),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '✓ Marker Terdeteksi! Model 3D ${artifact.name} berhasil dimunculkan.',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF00C853),
-          duration: const Duration(seconds: 3),
-        ),
-      );
     }
   }
 
@@ -256,61 +172,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Model 3D disembunyikan. Silakan arahkan kamera dan scan marker kembali.'),
+        content: Text('Model 3D disembunyikan. Silakan arahkan kamera ke kartu marker kembali.'),
         duration: Duration(seconds: 2),
       ),
     );
   }
 
-  void _takeArSnapshot() async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
-    try {
-      final image = await _cameraController!.takePicture();
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Color(0xFF00C853)),
-                SizedBox(width: 8),
-                Text('Foto AR Berhasil Diambil', style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Tangkapan foto Augmented Reality berhasil disimpan di perangkat:'),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.black12),
-                  ),
-                  child: Text(
-                    image.path,
-                    style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.black87),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengambil foto: $e')),
-      );
-    }
+  // Tombol Scan Manual (Fallback jika ingin memunculkan tanpa kartu fisik)
+  void _manualScanTrigger(TorajaArtifact artifact) {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isMarkerScanned = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✓ Deteksi Manual: Model 3D ${artifact.name} dimunculkan.'),
+        backgroundColor: const Color(0xFF00C853),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -374,9 +254,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                       setState(() {
                         _currentScreen = 1;
                         _isCameraMode = true;
-                        _isMarkerScanned = false; // Reset agar harus scan marker dahulu
+                        _isMarkerScanned = false; // Reset: Objek 3D TIDAK MUNCUL sebelum discan
                       });
-                      _initCamera();
+                      _initScanner();
                     },
                   ),
                   const SizedBox(height: 14),
@@ -438,7 +318,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       children: [
         // SISI KIRI: PANEL 4 KOTAK PILIHAN 3D MODEL
         Container(
-          width: 140, // Lebar diperluas untuk menampilkan kartu 3D preview
+          width: 140, // Lebar untuk menampilkan kartu preview 3D
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
@@ -448,10 +328,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           child: Column(
             children: [
               const SizedBox(height: 6),
-              // Ikon Grid Menu (Kembali ke Halaman 1 & Matikan Kamera)
+              // Ikon Menu / Kembali ke Halaman 1
               GestureDetector(
                 onTap: () {
-                  _disposeCamera();
+                  _disposeScanner();
                   setState(() {
                     _currentScreen = 0;
                     _isCameraMode = false;
@@ -603,37 +483,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // 1. Live Camera Preview (jika mode kamera aktif)
+                      // 1. Live Optical Scanner Camera (Metode B)
                       if (_isCameraMode) ...[
-                        if (_isCameraInitialized && _cameraController != null)
-                          SizedBox.expand(
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _cameraController!.value.previewSize?.height ?? 1280,
-                                height: _cameraController!.value.previewSize?.width ?? 720,
-                                child: CameraPreview(_cameraController!),
+                        MobileScanner(
+                          controller: _scannerController,
+                          onDetect: (BarcodeCapture capture) {
+                            for (final barcode in capture.barcodes) {
+                              final code = barcode.rawValue;
+                              if (code != null && code.isNotEmpty) {
+                                _handleDetectedMarker(code);
+                                break;
+                              }
+                            }
+                          },
+                          errorBuilder: (context, error) {
+                            return const Center(
+                              child: Text(
+                                'Akses Kamera Diperlukan untuk Scan AR',
+                                style: TextStyle(color: Colors.white, fontSize: 12),
                               ),
-                            ),
-                          )
-                        else
-                          const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(color: Color(0xFFB92B27)),
-                                SizedBox(height: 12),
-                                Text(
-                                  'Menghubungkan Kamera HP...',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                            );
+                          },
+                        ),
                       ],
 
                       // 2. AR Scanner Reticle & Laser (hanya saat mode kamera aktif)
@@ -644,25 +515,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                       if (_isCameraMode && !_isMarkerScanned)
                         _buildWaitingMarkerPrompt(activeArtifact),
 
-                      // 4. MODEL 3D INTERAKTIF
-                      // SYARAT PENTING:
-                      // - Di Mode Kamera: HANYA MUNCUL BILA MARKER TELAH DISCAN (_isMarkerScanned == true)
-                      // - Di Mode Studio: Selalu muncul untuk inspeksi santai
+                      // 4. MODEL 3D INTERAKTIF (HANYA MUNCUL SETELAH MARKER DISCAN!)
                       if (!_isCameraMode || _isMarkerScanned)
                         Positioned.fill(
                           child: ModelViewer(
                             key: ValueKey('${activeArtifact.id}_${_isCameraMode ? "cam" : "studio"}_$_isMarkerScanned'),
                             src: activeArtifact.publicUrl,
                             alt: activeArtifact.name,
-                            ar: false, // Intent eksternal dinonaktifkan agar tidak mental/crash
+                            ar: false,
                             autoRotate: !_isCameraMode,
                             cameraControls: true,
                             backgroundColor: Colors.transparent,
                           ),
                         ),
 
-                      // 5. Tombol Kontrol Kamera di Kanan Atas Viewport (Flash, Flip, Snapshot)
-                      if (_isCameraMode && _isCameraInitialized)
+                      // 5. Tombol Kontrol Kamera di Kanan Atas Viewport (Flash, Flip)
+                      if (_isCameraMode)
                         Positioned(
                           top: 10,
                           right: 10,
@@ -681,15 +549,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                                 color: Colors.white,
                                 onTap: _switchCameraLens,
                               ),
-                              if (_isMarkerScanned) ...[
-                                const SizedBox(width: 6),
-                                _buildCircleHudButton(
-                                  icon: Icons.camera_alt,
-                                  tooltip: 'Ambil Foto AR',
-                                  color: Colors.white,
-                                  onTap: _takeArSnapshot,
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -820,7 +679,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color.fromRGBO(0, 0, 0, 0.65),
+          color: const Color.fromRGBO(0, 0, 0, 0.70),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFFFDE59), width: 1.5),
         ),
@@ -829,15 +688,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           children: [
             const Icon(
               Icons.qr_code_scanner,
-              size: 44,
+              size: 40,
               color: Color(0xFFFFDE59),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Arahkan Kamera ke Marker:',
+            const SizedBox(height: 6),
+            const Text(
+              'Arahkan Kamera ke Kartu Marker:',
               style: TextStyle(
-                color: Colors.grey[300],
-                fontSize: 11,
+                color: Colors.white70,
+                fontSize: 10.5,
               ),
             ),
             const SizedBox(height: 2),
@@ -845,17 +704,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
               artifact.name,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             const Text(
-              'Ketuk tombol "Scan Marker" di bawah untuk memunculkan model 3D',
+              'Kamera akan otomatis mendeteksi pola optik kartu',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFFFFDE59),
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -872,45 +731,70 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       children: [
         // JIKA MODE KAMERA AR
         if (_isCameraMode) ...[
-          // TOMBOL UTAMA SCAN / RESET MARKER
-          if (!_isMarkerScanned)
+          if (!_isMarkerScanned) ...[
+            // Status Scanning Aktif
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFB92B27),
+                border: Border.all(color: Colors.white, width: 2),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black54, offset: Offset(0, 2), blurRadius: 4),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '🔍 Sedang Memindai Marker...',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // Tombol Scan Manual jika ingin mengetes langsung
             GestureDetector(
-              onTap: () => _scanMarkerTrigger(artifact),
+              onTap: () => _manualScanTrigger(artifact),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB92B27),
-                  border: Border.all(color: Colors.white, width: 2.5),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black54, offset: Offset(0, 3), blurRadius: 6),
-                  ],
+                  color: Colors.white,
+                  border: Border.all(color: Colors.black, width: 2),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _isScanningEffect
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                          )
-                        : const Icon(Icons.center_focus_strong, size: 20, color: Colors.white),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '🎯 SCAN MARKER SEKARANG',
+                    Icon(Icons.touch_app, size: 16, color: Colors.black),
+                    SizedBox(width: 4),
+                    Text(
+                      'Tes Manual',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
               ),
-            )
-          else
+            ),
+          ] else ...[
+            // Tombol Reset / Pindai Ulang
             GestureDetector(
               onTap: _resetMarkerScan,
               child: Container(
@@ -929,7 +813,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                     Icon(Icons.refresh, size: 18, color: Colors.white),
                     SizedBox(width: 6),
                     Text(
-                      '🔄 Pindai Ulang / Sembunyikan',
+                      '🔄 Pindai Marker Lain',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -940,8 +824,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                 ),
               ),
             ),
+          ],
 
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // Tombol Beralih ke Mode 3D Studio
           GestureDetector(
@@ -1225,11 +1110,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _BinderStep(number: '1', text: 'Tekan tombol "Scan AR" di Menu Utama untuk membuka penampil AR.'),
-          const _BinderStep(number: '2', text: 'Pilih salah satu objek budaya Toraja pada panel sebelah kiri (Sa\'pi\', Passapu, Sarong, Figur).'),
-          const _BinderStep(number: '3', text: 'Arahkan kamera HP ke kartu marker target yang sesuai.'),
-          const _BinderStep(number: '4', text: 'Tekan tombol "🎯 SCAN MARKER SEKARANG" di bawah kotak scan untuk memunculkan model 3D di atas marker.'),
-          const _BinderStep(number: '5', text: 'Setelah model 3D muncul, usap layar untuk memutar 360°, cubit untuk zoom, dan tekan ikon Kamera untuk mengambil foto AR.'),
-          const _BinderStep(number: '6', text: 'Tekan tombol (?) untuk membaca sejarah & makna filosofi adat objek budaya.'),
+          const _BinderStep(number: '2', text: 'Kamera HP langsung aktif memindai pola optik marker secara otomatis.'),
+          const _BinderStep(number: '3', text: 'Arahkan kamera HP ke kartu marker Toraja yang telah dicetak atau ditampilkan di layar monitor.'),
+          const _BinderStep(number: '4', text: 'Saat kartu marker terbaca, kamera otomatis memunculkan model 3D yang sesuai di atas kartu!'),
+          const _BinderStep(number: '5', text: 'Usap layar untuk memutar objek 360°, dan cubit untuk memperbesar / zoom.'),
+          const _BinderStep(number: '6', text: 'Tekan tombol "🔄 Pindai Marker Lain" untuk menyembunyikan model dan berganti marker.'),
+          const _BinderStep(number: '7', text: 'Tekan tombol (?) untuk membaca sejarah & makna filosofi adat objek budaya.'),
           const SizedBox(height: 14),
           Center(
             child: ElevatedButton.icon(
