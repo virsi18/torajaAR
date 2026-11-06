@@ -9,12 +9,25 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.ar" android:required="false"/>
 
-    <!-- Paket query untuk Google Scene Viewer AR di Android -->
+    <!-- Paket query untuk Google Scene Viewer AR di Android 11+ -->
     <queries>
         <package android:name="com.google.ar.core" />
+        <package android:name="com.google.android.googlequicksearchbox" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="intent" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="content" />
         </intent>
     </queries>
 
@@ -55,4 +68,3 @@
             android:value="2" />
     </application>
 </manifest>
-

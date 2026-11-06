@@ -272,34 +272,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     children: [
                       // Komponen ModelViewer 3D & AR
                       ModelViewer(
-                        key: ValueKey('${activeArtifact.id}_${ArtifactData.useLocalAssets}'),
-                        src: ArtifactData.useLocalAssets
-                            ? activeArtifact.localAssetPath
-                            : activeArtifact.fallbackUrl,
+                        key: ValueKey(activeArtifact.id),
+                        src: activeArtifact.publicUrl,
                         alt: activeArtifact.name,
-                        ar: true, // Fitur Augmented Reality via Google ARCore
+                        ar: true, // Fitur Augmented Reality via Google ARCore / Scene Viewer
                         arModes: const ['scene-viewer', 'webxr', 'quick-look'],
                         autoRotate: true,
                         cameraControls: true,
                         backgroundColor: Colors.transparent,
                       ),
 
-                      // Tombol "3D" di bagian bawah kotak wireframe
+                      // Tombol "3D / Buka Kamera AR" di bagian bawah kotak wireframe
                       Positioned(
                         bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF7B2BD),
-                            border: Border.all(color: Colors.black, width: 3),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            '3D',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.black,
+                        child: GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Ketuk ikon kubus AR di sudut kanan bawah kotak 3D untuk menyalakan kamera HP!',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                backgroundColor: Color(0xFFB92B27),
+                                duration: Duration(seconds: 4),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF7B2BD),
+                              border: Border.all(color: Colors.black, width: 3),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: const [
+                                BoxShadow(color: Colors.black26, offset: Offset(0, 2), blurRadius: 4),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.view_in_ar, size: 20, color: Colors.black),
+                                SizedBox(width: 8),
+                                Text(
+                                  '3D • Sentuh AR untuk Kamera',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
