@@ -316,9 +316,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
     return Row(
       children: [
-        // SISI KIRI: PANEL 4 KOTAK PILIHAN 3D MODEL
+        // SISI KIRI: PANEL 4 KOTAK PILIHAN OBJEK (HANYA MENAMPILKAN NAMA OBJEK)
         Container(
-          width: 140, // Lebar untuk menampilkan kartu preview 3D
+          width: 120, // Lebar proporsional untuk nama objek
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
@@ -339,7 +339,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   });
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -352,12 +352,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
               ),
               const Divider(color: Colors.black26, height: 10),
 
-              // 4 Kotak Pilihan Objek Budaya Toraja
+              // 4 Kotak Pilihan Objek Budaya Toraja (Hanya Menampilkan Nama Objek Saja)
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   itemCount: ArtifactData.items.length,
-                  separatorBuilder: (context, i) => const SizedBox(height: 6),
+                  separatorBuilder: (context, i) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final item = ArtifactData.items[index];
                     final isSelected = index == _selectedArtifactIndex;
@@ -371,96 +371,44 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                         });
                       },
                       child: Container(
-                        height: 60,
-                        padding: const EdgeInsets.all(4),
+                        height: 56,
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         decoration: BoxDecoration(
                           color: isSelected ? const Color(0xFFFFECEF) : Colors.white,
                           border: Border.all(
-                            color: isSelected ? const Color(0xFFB92B27) : Colors.black87,
+                            color: isSelected ? const Color(0xFFB92B27) : Colors.black,
                             width: isSelected ? 3.0 : 2.0,
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           boxShadow: isSelected
-                              ? const [BoxShadow(color: Color(0x33B92B27), blurRadius: 4, offset: Offset(0, 2))]
+                              ? const [
+                                  BoxShadow(
+                                    color: Color(0x33B92B27),
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  )
+                                ]
                               : null,
                         ),
-                        child: Row(
-                          children: [
-                            // Thumbnail Gambar Preview Model 3D
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                width: 44,
-                                height: double.infinity,
-                                color: const Color(0xFFF0F0F0),
-                                child: Image.asset(
-                                  item.thumbnailPath,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (ctx, err, stack) => const Icon(
-                                    Icons.threed_rotation,
-                                    size: 24,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-
-                            // Informasi Nama & Badge 3D
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xFFB92B27) : Colors.black87,
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
-                                    child: const Text(
-                                      '3D',
-                                      style: TextStyle(
-                                        fontSize: 7.5,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    item.name,
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected ? const Color(0xFFB92B27) : Colors.black,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    isSelected
-                                        ? (_isMarkerScanned ? '✓ Tampil di Scan' : '● Siap Scan')
-                                        : 'Ketuk pilih',
-                                    style: TextStyle(
-                                      fontSize: 7.5,
-                                      color: isSelected
-                                          ? (_isMarkerScanned ? const Color(0xFF00C853) : const Color(0xFFB92B27))
-                                          : Colors.grey[600],
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          item.name,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
+                            color: isSelected ? const Color(0xFFB92B27) : Colors.black87,
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
             ],
           ),
         ),

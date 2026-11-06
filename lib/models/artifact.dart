@@ -25,8 +25,8 @@ class ArtifactData {
   static const List<TorajaArtifact> items = [
     TorajaArtifact(
       id: 'sapi',
-      name: "Sa'pi' (Hiasan Kepala)",
-      modalTitle: "Informasi tentang hiasan kepala (Sa'pi')",
+      name: "Sa'pi'",
+      modalTitle: "Informasi tentang Sa'pi' (Hiasan Kepala)",
       description: 
         "Sa'pi' (Hiasan Kepala Toraja):\n\n"
         "Merupakan mahkota hiasan dahi tradisional khas Tana Toraja yang dikenakan penari perempuan dalam tarian adat Pa'gellu dan upacara adat Rambu Tuka' (syukuran).\n\n"
@@ -38,8 +38,8 @@ class ArtifactData {
     ),
     TorajaArtifact(
       id: 'passapu',
-      name: "Passapu (Ikat Kepala)",
-      modalTitle: "Informasi tentang Passapu",
+      name: "Passapu",
+      modalTitle: "Informasi tentang Passapu (Ikat Kepala)",
       description: 
         "Passapu (Ikat Kepala Adat Toraja):\n\n"
         "Passapu adalah penutup kepala tradisional khas kaum pria Toraja yang terbuat dari lipatan kain tenun bermotif khusus.\n\n"
@@ -51,7 +51,7 @@ class ArtifactData {
     ),
     TorajaArtifact(
       id: 'sarong',
-      name: "Sarong Adat",
+      name: "Sarong",
       modalTitle: "Informasi tentang Sarong Adat Toraja",
       description: 
         "Sarong / Busana Adat Toraja:\n\n"
@@ -64,7 +64,7 @@ class ArtifactData {
     ),
     TorajaArtifact(
       id: 'toraja',
-      name: "Figur Budaya Toraja",
+      name: "Figur Toraja",
       modalTitle: "Informasi tentang Figur Budaya Toraja",
       description: 
         "Figur dan Ornamen Adat Toraja:\n\n"
