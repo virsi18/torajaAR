@@ -1,11 +1,8 @@
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
 import 'models/artifact.dart';
 
 void main() {
@@ -51,14 +48,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   int _selectedArtifactIndex = 0;
 
   // State Manajemen Kamera AR In-App
-  bool _isCameraMode = false;
+  bool _isCameraMode = true; // Default aktif saat klik Scan AR
   CameraController? _cameraController;
   List<CameraDescription> _availableCamerasList = [];
   int _selectedCameraIndex = 0;
   bool _isCameraInitialized = false;
   bool _isCameraInitializing = false;
   bool _isFlashOn = false;
-  bool _isMarkerLocked = false;
+
+  // STATE SCAN MARKER (Default FALSE: Objek 3D HANYA muncul bila marker sudah discan!)
+  bool _isMarkerScanned = false;
+  bool _isScanningEffect = false;
 
   // Animasi Laser Scanline
   late AnimationController _scanAnimationController;
@@ -69,7 +69,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     super.initState();
     _scanAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
 
     _scanAnimation = Tween<double>(begin: 0.1, end: 0.9).animate(
@@ -162,7 +162,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Akses kamera gagal dibuka: $e. Pastikan izin kamera telah disetujui.'),
+            content: Text('Akses kamera gagal: $e. Pastikan izin kamera telah disetujui.'),
             backgroundColor: const Color(0xFFB92B27),
           ),
         );
@@ -176,7 +176,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       if (mounted) {
         setState(() {
           _isCameraMode = false;
-          _isMarkerLocked = false;
         });
       }
     } else {
@@ -213,6 +212,54 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         SnackBar(content: Text('Lampu senter tidak didukung di lensa ini: $e')),
       );
     }
+  }
+
+  // Aksi Pemindaian Marker: Memunculkan model 3D di kotak scan
+  void _scanMarkerTrigger(TorajaArtifact artifact) async {
+    setState(() {
+      _isScanningEffect = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (mounted) {
+      setState(() {
+        _isScanningEffect = false;
+        _isMarkerScanned = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '✓ Marker Terdeteksi! Model 3D ${artifact.name} berhasil dimunculkan.',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF00C853),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // Reset Pemindaian Marker: Menyembunyikan model 3D kembali ke mode scan
+  void _resetMarkerScan() {
+    setState(() {
+      _isMarkerScanned = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Model 3D disembunyikan. Silakan arahkan kamera dan scan marker kembali.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   void _takeArSnapshot() async {
@@ -326,8 +373,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                     onPressed: () {
                       setState(() {
                         _currentScreen = 1;
+                        _isCameraMode = true;
+                        _isMarkerScanned = false; // Reset agar harus scan marker dahulu
                       });
-                      // Menyalakan kamera langsung saat tombol Scan AR ditekan
                       _initCamera();
                     },
                   ),
@@ -388,9 +436,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
     return Row(
       children: [
-        // Sisi Kiri: Ikon Grid + 4 Thumbnail Item
+        // SISI KIRI: PANEL 4 KOTAK PILIHAN 3D MODEL
         Container(
-          width: 110,
+          width: 140, // Lebar diperluas untuk menampilkan kartu 3D preview
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
@@ -399,7 +447,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           ),
           child: Column(
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               // Ikon Grid Menu (Kembali ke Halaman 1 & Matikan Kamera)
               GestureDetector(
                 onTap: () {
@@ -407,26 +455,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   setState(() {
                     _currentScreen = 0;
                     _isCameraMode = false;
-                    _isMarkerLocked = false;
+                    _isMarkerScanned = false;
                   });
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(6),
-                  margin: const EdgeInsets.only(bottom: 6),
-                  child: const Icon(
-                    Icons.grid_view_rounded,
-                    size: 38,
-                    color: Colors.black,
+                  padding: const EdgeInsets.all(4),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.arrow_back_ios_new, size: 16, color: Colors.black),
+                      SizedBox(width: 4),
+                      Icon(Icons.grid_view_rounded, size: 28, color: Colors.black),
+                    ],
                   ),
                 ),
               ),
+              const Divider(color: Colors.black26, height: 10),
 
-              // 4 Thumbnail Vertikal
+              // 4 Kotak Pilihan Objek Budaya Toraja
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   itemCount: ArtifactData.items.length,
-                  separatorBuilder: (context, i) => const SizedBox(height: 8),
+                  separatorBuilder: (context, i) => const SizedBox(height: 6),
                   itemBuilder: (context, index) {
                     final item = ArtifactData.items[index];
                     final isSelected = index == _selectedArtifactIndex;
@@ -435,37 +486,92 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                       onTap: () {
                         setState(() {
                           _selectedArtifactIndex = index;
+                          // Reset scan saat berganti objek, agar harus scan marker objek baru!
+                          _isMarkerScanned = false;
                         });
                       },
                       child: Container(
-                        height: 64,
+                        height: 60,
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: isSelected ? const Color(0xFFFFECEF) : Colors.white,
                           border: Border.all(
-                            color: isSelected ? const Color(0xFFB92B27) : Colors.black,
-                            width: isSelected ? 3.5 : 2.5,
+                            color: isSelected ? const Color(0xFFB92B27) : Colors.black87,
+                            width: isSelected ? 3.0 : 2.0,
                           ),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: isSelected
+                              ? const [BoxShadow(color: Color(0x33B92B27), blurRadius: 4, offset: Offset(0, 2))]
+                              : null,
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Row(
                           children: [
-                            Icon(
-                              Icons.image_outlined,
-                              size: 26,
-                              color: isSelected ? const Color(0xFFB92B27) : Colors.black,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              item.name,
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? const Color(0xFFB92B27) : Colors.black,
+                            // Thumbnail Gambar Preview Model 3D
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 44,
+                                height: double.infinity,
+                                color: const Color(0xFFF0F0F0),
+                                child: Image.asset(
+                                  item.thumbnailPath,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (ctx, err, stack) => const Icon(
+                                    Icons.threed_rotation,
+                                    size: 24,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Informasi Nama & Badge 3D
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFFB92B27) : Colors.black87,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: const Text(
+                                      '3D',
+                                      style: TextStyle(
+                                        fontSize: 7.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected ? const Color(0xFFB92B27) : Colors.black,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    isSelected
+                                        ? (_isMarkerScanned ? '✓ Tampil di Scan' : '● Siap Scan')
+                                        : 'Ketuk pilih',
+                                    style: TextStyle(
+                                      fontSize: 7.5,
+                                      color: isSelected
+                                          ? (_isMarkerScanned ? const Color(0xFF00C853) : const Color(0xFFB92B27))
+                                          : Colors.grey[600],
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -474,16 +580,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   },
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
             ],
           ),
         ),
 
-        // Sisi Kanan: Area Viewport 3D / AR + Tombol "?"
+        // SISI KANAN: KOTAK SCAN AR & VIEWPORT
         Expanded(
           child: Stack(
             children: [
-              // Viewport Box 3D Model & Kamera AR
+              // Kotak Scan AR / Viewport Box Utama
               Center(
                 child: Container(
                   width: 440,
@@ -534,21 +640,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                       if (_isCameraMode)
                         _buildArScannerOverlay(activeArtifact),
 
-                      // 3. Komponen ModelViewer 3D Interaktif
-                      // Di mode kamera, latar transparan agar objek 3D melayang di atas kamera nyata
-                      Positioned.fill(
-                        child: ModelViewer(
-                          key: ValueKey('${activeArtifact.id}_${_isCameraMode ? "cam" : "studio"}'),
-                          src: activeArtifact.publicUrl,
-                          alt: activeArtifact.name,
-                          ar: false, // Intent eksternal dinonaktifkan agar tidak mental/crash
-                          autoRotate: !_isCameraMode,
-                          cameraControls: true,
-                          backgroundColor: Colors.transparent,
-                        ),
-                      ),
+                      // 3. TARGET MARKER PLACEHOLDER (Tampil saat BELUM scan marker)
+                      if (_isCameraMode && !_isMarkerScanned)
+                        _buildWaitingMarkerPrompt(activeArtifact),
 
-                      // 4. Tombol Kontrol Kamera di Kanan Atas Viewport (Flash, Flip, Snapshot)
+                      // 4. MODEL 3D INTERAKTIF
+                      // SYARAT PENTING:
+                      // - Di Mode Kamera: HANYA MUNCUL BILA MARKER TELAH DISCAN (_isMarkerScanned == true)
+                      // - Di Mode Studio: Selalu muncul untuk inspeksi santai
+                      if (!_isCameraMode || _isMarkerScanned)
+                        Positioned.fill(
+                          child: ModelViewer(
+                            key: ValueKey('${activeArtifact.id}_${_isCameraMode ? "cam" : "studio"}_$_isMarkerScanned'),
+                            src: activeArtifact.publicUrl,
+                            alt: activeArtifact.name,
+                            ar: false, // Intent eksternal dinonaktifkan agar tidak mental/crash
+                            autoRotate: !_isCameraMode,
+                            cameraControls: true,
+                            backgroundColor: Colors.transparent,
+                          ),
+                        ),
+
+                      // 5. Tombol Kontrol Kamera di Kanan Atas Viewport (Flash, Flip, Snapshot)
                       if (_isCameraMode && _isCameraInitialized)
                         Positioned(
                           top: 10,
@@ -564,149 +677,34 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                               const SizedBox(width: 6),
                               _buildCircleHudButton(
                                 icon: Icons.flip_camera_android,
-                                tooltip: 'Ganti Kamera',
+                                tooltip: 'Ganti Kamera Depan/Belakang',
                                 color: Colors.white,
                                 onTap: _switchCameraLens,
                               ),
-                              const SizedBox(width: 6),
-                              _buildCircleHudButton(
-                                icon: Icons.camera_alt,
-                                tooltip: 'Ambil Foto AR',
-                                color: Colors.white,
-                                onTap: _takeArSnapshot,
-                              ),
+                              if (_isMarkerScanned) ...[
+                                const SizedBox(width: 6),
+                                _buildCircleHudButton(
+                                  icon: Icons.camera_alt,
+                                  tooltip: 'Ambil Foto AR',
+                                  color: Colors.white,
+                                  onTap: _takeArSnapshot,
+                                ),
+                              ],
                             ],
                           ),
                         ),
 
-                      // 5. Badge Status di Kiri Atas Viewport
+                      // 6. Badge Status di Kiri Atas Viewport
                       Positioned(
                         top: 10,
                         left: 10,
                         child: _buildStatusBadge(activeArtifact),
                       ),
 
-                      // 6. Bar Tombol di Bagian Bawah Viewport
+                      // 7. BAR TOMBOL AKSI UTAMA DI BAGIAN BAWAH KOTAK SCAN
                       Positioned(
                         bottom: 10,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Tombol Toggle Mode (Kamera AR / 3D Studio)
-                            GestureDetector(
-                              onTap: _toggleCameraMode,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: _isCameraMode ? Colors.white : const Color(0xFFF7B2BD),
-                                  border: Border.all(color: Colors.black, width: 3),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: const [
-                                    BoxShadow(color: Colors.black26, offset: Offset(0, 2), blurRadius: 4),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _isCameraMode ? Icons.view_in_ar : Icons.camera_alt,
-                                      size: 18,
-                                      color: Colors.black,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _isCameraMode ? 'Mode 3D Studio' : 'Nyalakan Kamera AR',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            // Tombol Kunci Marker / Pindai Ulang jika mode kamera aktif
-                            if (_isCameraMode) ...[
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _isMarkerLocked = !_isMarkerLocked;
-                                  });
-                                  if (_isMarkerLocked) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('✓ Marker Terdeteksi: Objek ${activeArtifact.name} terkunci di ruang nyata!'),
-                                        backgroundColor: const Color(0xFF00C853),
-                                        duration: const Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: _isMarkerLocked ? const Color(0xFF00C853) : Colors.black87,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _isMarkerLocked ? Icons.check_circle : Icons.filter_center_focus,
-                                        size: 16,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        _isMarkerLocked ? 'Marker Terkunci' : 'Kunci Marker',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-
-                            // Tombol Info Scene Viewer jika di mode 3D
-                            if (!_isCameraMode) ...[
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () => _showSceneViewerDialog(activeArtifact),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    border: Border.all(color: Colors.black, width: 2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.open_in_new, size: 16, color: Colors.black),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Google ARCore',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                        child: _buildBottomActionBar(activeArtifact),
                       ),
                     ],
                   ),
@@ -754,13 +752,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   }
 
   // ==========================================================
-  // WIDGET HELPER SCANNER AR & HUD
+  // WIDGET HELPER SCANNER AR & RETICLE
   // ==========================================================
   Widget _buildArScannerOverlay(TorajaArtifact artifact) {
-    final color = _isMarkerLocked ? const Color(0xFF00C853) : const Color(0xFFFFDE59);
+    final color = _isMarkerScanned ? const Color(0xFF00C853) : const Color(0xFFFFDE59);
 
     return IgnorePointer(
-      ignoring: true, // Input sentuhan tetap tembus ke ModelViewer untuk rotasi 3D
+      ignoring: true, // Input sentuhan tetap tembus ke ModelViewer jika sudah muncul
       child: AnimatedBuilder(
         animation: _scanAnimation,
         builder: (context, child) {
@@ -781,8 +779,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                 ),
               ),
 
-              // Garis Laser Scan yang bergerak vertikal
-              if (!_isMarkerLocked)
+              // Garis Laser Scan yang bergerak vertikal (Hanya saat memindai / belum discan)
+              if (!_isMarkerScanned)
                 Positioned(
                   left: 90,
                   right: 90,
@@ -816,9 +814,203 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     );
   }
 
+  // Tampilan petunjuk di tengah kotak scan saat menunggu marker discan
+  Widget _buildWaitingMarkerPrompt(TorajaArtifact artifact) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(0, 0, 0, 0.65),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFFDE59), width: 1.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.qr_code_scanner,
+              size: 44,
+              color: Color(0xFFFFDE59),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Arahkan Kamera ke Marker:',
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              artifact.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Ketuk tombol "Scan Marker" di bawah untuk memunculkan model 3D',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFFFFDE59),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Bar Tombol Bagian Bawah Kotak Scan
+  Widget _buildBottomActionBar(TorajaArtifact artifact) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // JIKA MODE KAMERA AR
+        if (_isCameraMode) ...[
+          // TOMBOL UTAMA SCAN / RESET MARKER
+          if (!_isMarkerScanned)
+            GestureDetector(
+              onTap: () => _scanMarkerTrigger(artifact),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB92B27),
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black54, offset: Offset(0, 3), blurRadius: 6),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _isScanningEffect
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          )
+                        : const Icon(Icons.center_focus_strong, size: 20, color: Colors.white),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '🎯 SCAN MARKER SEKARANG',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: _resetMarkerScan,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00C853),
+                  border: Border.all(color: Colors.white, width: 2),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black45, offset: Offset(0, 2), blurRadius: 4),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.refresh, size: 18, color: Colors.white),
+                    SizedBox(width: 6),
+                    Text(
+                      '🔄 Pindai Ulang / Sembunyikan',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          const SizedBox(width: 10),
+
+          // Tombol Beralih ke Mode 3D Studio
+          GestureDetector(
+            onTap: _toggleCameraMode,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                border: Border.all(color: Colors.white60, width: 1.5),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.view_in_ar, size: 16, color: Colors.white),
+                  SizedBox(width: 6),
+                  Text(
+                    'Mode 3D Studio',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+
+        // JIKA MODE 3D STUDIO (KAMERA MATI)
+        if (!_isCameraMode) ...[
+          GestureDetector(
+            onTap: _toggleCameraMode,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+              decoration: BoxDecoration(
+                color: const Color(0xFFB92B27),
+                border: Border.all(color: Colors.black, width: 2.5),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, offset: Offset(0, 2), blurRadius: 4),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Nyalakan Kamera Scan AR',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildStatusBadge(TorajaArtifact artifact) {
     if (_isCameraMode) {
-      if (_isMarkerLocked) {
+      if (_isMarkerScanned) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -833,7 +1025,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
               const Icon(Icons.check_circle, size: 14, color: Colors.white),
               const SizedBox(width: 5),
               Text(
-                'TERKUNCI: ${artifact.name}',
+                'TERDETEKSI: ${artifact.name}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10.5,
@@ -859,7 +1051,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
             Icon(Icons.fiber_manual_record, size: 11, color: Colors.redAccent),
             SizedBox(width: 5),
             Text(
-              'LIVE AR • MEMINDAI...',
+              'MEMINDAI MARKER...',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 10.5,
@@ -885,7 +1077,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           const Icon(Icons.threed_rotation, size: 14, color: Colors.white),
           const SizedBox(width: 5),
           Text(
-            artifact.name,
+            'STUDIO 3D • ${artifact.name}',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 10.5,
@@ -917,85 +1109,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
           ),
           child: Icon(icon, size: 18, color: color),
         ),
-      ),
-    );
-  }
-
-  void _showSceneViewerDialog(TorajaArtifact artifact) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.view_in_ar, color: Color(0xFFB92B27)),
-            SizedBox(width: 8),
-            Text('Google Scene Viewer', style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Google Scene Viewer adalah penampil AR eksternal bawaan Google untuk mendeteksi permukaan lantai datar.',
-              style: TextStyle(fontSize: 13.5),
-            ),
-            SizedBox(height: 10),
-            Text(
-              '⚠️ Catatan Perangkat:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFB92B27)),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Fitur ini memerlukan aplikasi "Google Play Services for AR" terpasang dan model HP bersertifikasi ARCore oleh Google.\n\nJika layar sempat abu-abu lalu kembali, HP belum mendukung ARCore. Anda dapat langsung menggunakan fitur "Nyalakan Kamera AR" di aplikasi ini yang 100% berjalan aktif.',
-              style: TextStyle(fontSize: 12.5, color: Colors.black87),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFB92B27),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                if (Platform.isAndroid) {
-                  final intent = AndroidIntent(
-                    action: 'android.intent.action.VIEW',
-                    data: Uri(
-                      scheme: 'https',
-                      host: 'arvr.google.com',
-                      path: '/scene-viewer/1.0',
-                      queryParameters: {
-                        'mode': 'ar_preferred',
-                        'file': artifact.publicUrl,
-                      },
-                    ).toString(),
-                    package: 'com.google.android.googlequicksearchbox',
-                    flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-                  );
-                  await intent.launch();
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Gagal membuka Scene Viewer: $e'),
-                      backgroundColor: const Color(0xFFB92B27),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Coba Buka'),
-          ),
-        ],
       ),
     );
   }
@@ -1112,10 +1225,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _BinderStep(number: '1', text: 'Tekan tombol "Scan AR" di Menu Utama untuk membuka penampil AR.'),
-          const _BinderStep(number: '2', text: 'Kamera HP langsung menyala otomatis di layar. Arahkan kamera ke kartu marker atau meja kerja.'),
-          const _BinderStep(number: '3', text: 'Pilih salah satu objek Toraja pada panel sebelah kiri (Sa\'pi\', Passapu, Sarong, Figur).'),
-          const _BinderStep(number: '4', text: 'Usap layar untuk memutar objek 3D 360°, dan cubit untuk memperbesar / zoom.'),
-          const _BinderStep(number: '5', text: 'Tekan "Kunci Marker" untuk mengunci posisi objek, dan tekan ikon Kamera di pojok kanan atas untuk mengambil foto AR.'),
+          const _BinderStep(number: '2', text: 'Pilih salah satu objek budaya Toraja pada panel sebelah kiri (Sa\'pi\', Passapu, Sarong, Figur).'),
+          const _BinderStep(number: '3', text: 'Arahkan kamera HP ke kartu marker target yang sesuai.'),
+          const _BinderStep(number: '4', text: 'Tekan tombol "🎯 SCAN MARKER SEKARANG" di bawah kotak scan untuk memunculkan model 3D di atas marker.'),
+          const _BinderStep(number: '5', text: 'Setelah model 3D muncul, usap layar untuk memutar 360°, cubit untuk zoom, dan tekan ikon Kamera untuk mengambil foto AR.'),
           const _BinderStep(number: '6', text: 'Tekan tombol (?) untuk membaca sejarah & makna filosofi adat objek budaya.'),
           const SizedBox(height: 14),
           Center(
