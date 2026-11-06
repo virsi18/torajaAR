@@ -1,0 +1,22 @@
+# Blender 3.6.7 MTL File: 'passapu.blend'
+# www.blender.org
+
+newmtl Material.006
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.121483 0.027270 0.023368
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Material.007
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd depositphotos_544840508-stock-illustration-geometric-ethnic-oriental-seamless-pattern (2).jpg

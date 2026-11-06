@@ -16,58 +16,55 @@ class TorajaArtifact {
   });
 }
 
-// Data daftar objek kebudayaan Toraja sesuai wireframe PDF
+// Data 4 objek kebudayaan Toraja sesuai aset 3D asli dari klien dan wireframe PDF
 class ArtifactData {
-  /// Ubah nilai ini menjadi `true` jika Anda sudah memasukkan file .glb asli dari klien
-  /// ke dalam folder 'assets/models/'.
-  /// Jika masih bernilai `false`, aplikasi akan menggunakan model 3D sample online aman.
-  static const bool useLocalAssets = false;
+  /// Menggunakan file .glb asli hasil konversi dari aset Blender klien
+  static const bool useLocalAssets = true;
 
   static const List<TorajaArtifact> items = [
     TorajaArtifact(
-      id: 'headdress',
-      name: "Hiasan Kepala",
-      modalTitle: "Informasi tentang hiasan kepala",
+      id: 'sapi',
+      name: "Sa'pi' (Hiasan Kepala)",
+      modalTitle: "Informasi tentang hiasan kepala (Sa'pi')",
       description: 
         "Sa'pi' (Hiasan Kepala Toraja):\n\n"
-        "Merupakan mahkota hiasan dahi tradisional khas Tana Toraja yang dikenakan dalam tarian adat Pa'gellu dan upacara kebesaran adat Rambu Tuka' (syukuran).\n\n"
-        "Dihiasi dengan motif ukiran tanduk kerbau berlapis emas, manik-manik kuno (kandaure), serta bulu cenderawasih/ayam jantan yang melambangkan keanggunan, martabat, dan kehormatan luhur masyarakat Toraja.",
-      localAssetPath: 'assets/models/hiasan_kepala.glb',
+        "Merupakan mahkota hiasan dahi tradisional khas Tana Toraja yang dikenakan penari perempuan dalam tarian adat Pa'gellu dan upacara adat Rambu Tuka' (syukuran).\n\n"
+        "Dihiasi dengan motif ukiran tanduk kerbau berlapis emas, untaian manik-manik kuno (kandaure), serta bulu cenderawasih atau ayam jantan yang melambangkan keanggunan, martabat, dan kehormatan luhur masyarakat Toraja.",
+      localAssetPath: 'assets/models/sapi.glb',
       fallbackUrl: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
     ),
     TorajaArtifact(
-      id: 'tongkonan',
-      name: "Tongkonan",
-      modalTitle: "Informasi tentang Rumah Tongkonan",
+      id: 'passapu',
+      name: "Passapu (Ikat Kepala)",
+      modalTitle: "Informasi tentang Passapu",
       description: 
-        "Rumah Adat Tongkonan:\n\n"
-        "Tongkonan adalah rumah adat masyarakat Toraja dengan ciri khas atap melengkung menyerupai perahu terbalik atau tanduk kerbau (Banua Layuk).\n\n"
-        "Di bagian depan terdapat tiang utama (Tulak Somba) yang dihiasi deretan tanduk kerbau sebagai penanda status sosial dan kekayaan adat suatu keluarga bangsawan Toraja.",
-      localAssetPath: 'assets/models/tongkonan.glb',
-      fallbackUrl: 'https://modelviewer.dev/shared-assets/models/reflective-sphere.gltf',
-    ),
-    TorajaArtifact(
-      id: 'tautau',
-      name: "Tau-tau",
-      modalTitle: "Informasi tentang Patung Tau-tau",
-      description: 
-        "Patung Adat Tau-tau:\n\n"
-        "Patung kayu nangka pahatan yang menyerupai fisik orang yang telah meninggal dunia dalam strata bangsawan Toraja.\n\n"
-        "Patung ini diberi pakaian adat lengkap dan diletakkan di ceruk tebing batu makam (seperti di Lemo dan Londa) untuk menjaga keturunan yang masih hidup serta melambangkan kehadiran abadi para leluhur.",
-      localAssetPath: 'assets/models/tau_tau.glb',
+        "Passapu (Ikat Kepala Adat Toraja):\n\n"
+        "Passapu adalah penutup kepala tradisional khas kaum pria Toraja yang terbuat dari lipatan kain tenun bermotif khusus.\n\n"
+        "Bentuk lipatan dan sudut passapu mencerminkan status adat, kewibawaan, keberanian, serta kesiapan seorang pria Toraja dalam memimpin upacara adat atau upacara pemakaman Rambu Solo'.",
+      localAssetPath: 'assets/models/passapu.glb',
       fallbackUrl: 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb',
     ),
     TorajaArtifact(
-      id: 'tedong',
-      name: "Tedong Bonga",
-      modalTitle: "Informasi tentang Tedong Bonga",
+      id: 'sarong',
+      name: "Sarong Adat",
+      modalTitle: "Informasi tentang Sarong Adat Toraja",
       description: 
-        "Tedong Bonga (Kerbau Belang Toraja):\n\n"
-        "Hewan kerbau endemik paling prestisius dan bernilai sangat tinggi (dapat mencapai ratusan juta hingga miliaran rupiah).\n\n"
-        "Tedong Bonga memiliki belang putih dan hitam khas serta mata berwarna putih/beling. Merupakan hewan kurban sakral utama dalam upacara pemakaman adat Rambu Solo' untuk mengantar arwah menuju alam baka (Puya).",
-      localAssetPath: 'assets/models/tedong_bonga.glb',
+        "Sarong / Busana Adat Toraja:\n\n"
+        "Kain sarung tenun tradisional khas suku Toraja yang ditenun dengan benang kapas dan dihiasi motif ukiran Pa'ssura khas Toraja (seperti motif Pa'teddong dan Pa'sekong Kandaure).\n\n"
+        "Sarong dikenakan oleh masyarakat Toraja baik pria maupun wanita dalam berbagai perhelatan adat akbar sebagai simbol identitas leluhur dan kesopanan budi pekerti.",
+      localAssetPath: 'assets/models/sarong.glb',
+      fallbackUrl: 'https://modelviewer.dev/shared-assets/models/reflective-sphere.gltf',
+    ),
+    TorajaArtifact(
+      id: 'toraja',
+      name: "Figur Budaya Toraja",
+      modalTitle: "Informasi tentang Figur Budaya Toraja",
+      description: 
+        "Figur dan Ornamen Adat Toraja:\n\n"
+        "Representasi seni ukir dan figur khas Tana Toraja yang menggambarkan keharmonisan antara manusia, alam (tombak dan kerbau), serta nilai-nilai spiritual Aluk Todolo.\n\n"
+        "Menjadi warisan budaya takbenda nusantara yang kaya akan filosofi kehidupan, kebersamaan gotong royong, dan penghormatan kepada para leluhur.",
+      localAssetPath: 'assets/models/toraja.glb',
       fallbackUrl: 'https://modelviewer.dev/shared-assets/models/Horse.glb',
     ),
   ];
 }
-
