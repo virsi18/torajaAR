@@ -247,20 +247,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.asset(
-                    'assets/images/logo_toraja_2d.png',
-                    width: 220,
-                    height: 175,
-                    fit: BoxFit.contain,
-                    errorBuilder: (ctx, err, stack) => SizedBox(
-                      width: 250,
-                      height: 180,
-                      child: CustomPaint(
-                        painter: TongkonanWireframePainter(),
-                      ),
-                    ),
+                SizedBox(
+                  width: 250,
+                  height: 180,
+                  child: CustomPaint(
+                    painter: TongkonanWireframePainter(),
                   ),
                 ),
               ],
